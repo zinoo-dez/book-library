@@ -1,0 +1,40 @@
+{
+    "name": "zinoo/book-library-management-system",
+    "description": "A complete pure PHP OOP library management system with user authentication, book borrowing, reviews, reservations, multiple copies, categories, cover images, admin panel, PDF/CSV export, and dark mode.",
+    "type": "project",
+    "keywords": [
+        "php",
+        "oop",
+        "library",
+        "management",
+        "system",
+        "mysql",
+        "bootstrap",
+        "crud",
+        "authentication"
+    ],
+    "homepage": "https://github.com/zinoodex/book-library-management-system",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Zinoo",
+            "email": "zinoo@example.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "tecnickcom/tcpdf": "^6.7"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

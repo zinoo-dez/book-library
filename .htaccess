@@ -1,0 +1,12 @@
+# Protect sensitive directories
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(config|src|includes|vendor|data) - [F,L]
+</IfModule>
+
+# Deny access to .php files in uploads
+# In root .htaccess
+<Files "database.php">
+    Order allow,deny
+    Deny from all
+</Files>

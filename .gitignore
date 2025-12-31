@@ -1,0 +1,5 @@
+vendor/
+.env
+public/uploads/covers/*
+!public/uploads/covers/.gitkeep
+config/database.php
