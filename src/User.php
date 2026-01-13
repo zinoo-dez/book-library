@@ -3,7 +3,7 @@
 namespace App;
 class User
 {
-    private PDO $pdo;
+    private \PDO $pdo;
     private ?int $id = null;
     private ?string $username = null;
     private ?string $email = null;

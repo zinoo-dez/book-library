@@ -1,8 +1,6 @@
 <?php
 // src/EBook.php
-
 namespace App;
-
 class EBook extends Book
 {
     private string $fileSize;
@@ -36,6 +34,11 @@ class EBook extends Book
     public function setDownloadLink(?string $link): void
     {
         $this->downloadLink = $link;
+    }
+
+    public function setFileSize(string $size): void
+    {
+        $this->fileSize = $size;
     }
 
     public function toArray(): array

@@ -17,6 +17,9 @@ use App\Auth;
                 <li class="nav-item">
                     <a class="nav-link" href="<?= baseUrl() ?>/index.php">Home</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= baseUrl() ?>/ebooks.php">E-Books</a>
+                </li>
 
                 <?php if (Auth::check()): ?>
                     <li class="nav-item">

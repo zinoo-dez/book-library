@@ -7,10 +7,11 @@ class Book
     protected string $title;
     protected string $author;
     protected int $year;
-    protected ?string $coverImage = null;
+    protected ?string $coverImage = null; // optional
     protected string $category = 'Uncategorized';
     protected int $totalCopies = 1;
     protected int $availableCopies = 1;
+    protected string $type = 'physical';
 
     public function __construct(
         string $title,
@@ -27,7 +28,7 @@ class Book
         $this->year = $year;
         $this->coverImage = $coverImage;
         $this->category = $category;
-        $this->totalCopies = max(1, $totalCopies);
+        $this->totalCopies = max(1, $totalCopies); // minimum 1 copy
         $this->availableCopies = $this->totalCopies; // Initially all available
     }
 
@@ -67,6 +68,14 @@ class Book
     public function isAvailable(): bool
     {
         return $this->availableCopies > 0;
+    }
+    public function getType(): string
+    {
+        return $this->type;
+    }
+    public function setType(string $type): void
+    {
+        $this->type = $type;
     }
 
     // ==================== Setters ====================
@@ -117,6 +126,7 @@ class Book
             'category'          => $this->category,
             'total_copies'      => $this->totalCopies,
             'available_copies'  => $this->availableCopies,
+            'type'              => $this->type,
         ];
     }
 
@@ -131,7 +141,8 @@ class Book
             $data['category'] ?? 'Uncategorized',
             $data['id'] ?? null
         );
-        $book->availableCopies = $data['available_copies'] ?? $book->totalCopies;
+        $book->availableCopies = $data['available_copies'] ?? $book->totalCopies; //
         return $book;
     }
 }
+

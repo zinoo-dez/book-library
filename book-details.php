@@ -102,7 +102,10 @@ include 'views/header.php';
         <div class="mt-4">
             <h4>Availability</h4>
             <p class="fs-5">
-                <?php if ($book->isAvailable()): ?>
+                <?php if ($book instanceof \App\EBook): ?>
+                    <span class="text-primary fw-bold">Digital E-Book</span>
+                    <br><small class="text-muted">Size: <?= e($book->getFileSize()) ?></small>
+                <?php elseif ($book->isAvailable()): ?>
                     <span class="text-success fw-bold">Available</span>
                     <br><small><?= $book->getAvailableCopies() ?> of <?= $book->getTotalCopies() ?> copies</small>
                 <?php else: ?>
@@ -111,29 +114,44 @@ include 'views/header.php';
             </p>
 
             <?php if (Auth::check()): ?>
-                <?php $isBorrowing = $library->isCurrentlyBorrowing(Auth::id(), $bookId); ?>
-                
-                <?php if ($isBorrowing): ?>
-                    <button class="btn btn-secondary btn-lg w-100 mb-2" disabled>
-                        📖 You already have this book
-                    </button>
-                    <form method="POST" class="d-inline">
-                        <input type="hidden" name="action" value="return">
-                        <button type="submit" class="btn btn-outline-danger w-100">Return Book Now</button>
-                    </form>
-                <?php elseif ($book->isAvailable()): ?>
-                    <form method="POST" class="d-inline">
-                        <input type="hidden" name="action" value="borrow">
-                        <button type="submit" class="btn btn-success btn-lg w-100">Borrow Now</button>
-                    </form>
+                <?php if ($book instanceof \App\EBook): ?>
+                    <?php if ($book->getDownloadLink()): ?>
+                        <a href="<?= e($book->getDownloadLink()) ?>" target="_blank" class="btn btn-primary btn-lg w-100 mb-2">
+                             📥 Download PDF
+                        </a>
+                    <?php else: ?>
+                        <button class="btn btn-secondary btn-lg w-100 mb-2" disabled>No Link Available</button>
+                    <?php endif; ?>
                 <?php else: ?>
-                    <form method="POST" class="d-inline">
-                        <input type="hidden" name="action" value="reserve">
-                        <button type="submit" class="btn btn-outline-info btn-lg w-100">Reserve / Join Waitlist</button>
-                    </form>
+                    <?php $isBorrowing = $library->isCurrentlyBorrowing(Auth::id(), $bookId); ?>
+                    
+                    <?php if ($isBorrowing): ?>
+                        <button class="btn btn-secondary btn-lg w-100 mb-2" disabled>
+                            📖 You already have this book
+                        </button>
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="id" value="<?= e($book->getId()) ?>">
+                            <input type="hidden" name="action" value="return">
+                            <button type="submit" class="btn btn-outline-danger w-100">Return Book Now</button>
+                        </form>
+                    <?php elseif ($book->isAvailable()): ?>
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="id" value="<?= e($book->getId()) ?>">
+                            <input type="hidden" name="action" value="borrow">
+                            <button type="submit" class="btn btn-success btn-lg w-100">Borrow Now</button>
+                        </form>
+                    <?php else: ?>
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="id" value="<?= e($book->getId()) ?>">
+                            <input type="hidden" name="action" value="reserve">
+                            <button type="submit" class="btn btn-outline-info btn-lg w-100">Reserve / Join Waitlist</button>
+                        </form>
+                    <?php endif; ?>
                 <?php endif; ?>
             <?php else: ?>
-                <a href="login.php" class="btn btn-primary btn-lg w-100">Login to Borrow</a>
+                <a href="login.php" class="btn btn-primary btn-lg w-100">
+                    <?= ($book instanceof \App\EBook) ? 'Login to Download' : 'Login to Borrow' ?>
+                </a>
             <?php endif; ?>
         </div>
     </div>

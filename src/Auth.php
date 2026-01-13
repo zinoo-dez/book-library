@@ -4,9 +4,7 @@
 // Handles login, logout, registration, password reset (basic), and guards
 
 namespace App;
-
 use PDO;
-
 class Auth
 {
     private PDO $pdo;

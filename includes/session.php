@@ -6,6 +6,7 @@
  * Start or resume session with secure settings
  * Call this at the very top of every entry point (before any output)
  */
+// $allowedHosts = ['localhost:4000', 'localhost:3500','www.booklibrary.com','booklibrary.com'];
 
 if (session_status() === PHP_SESSION_NONE) {
     // Secure session configuration

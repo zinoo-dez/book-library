@@ -29,7 +29,7 @@ $currentText = $existingReview['review_text'] ?? '';
     <div class="card-body p-4">
         <form method="POST" action="book-details.php">
             <!-- Hidden fields -->
-            <input type="hidden" name="book_id" value="<?= e($book->getId()) ?>">
+            <input type="hidden" name="id" value="<?= e($book->getId()) ?>">
             <input type="hidden" name="action" value="<?= $isEdit ? 'update_review' : 'add_review' ?>">
 
             <!-- Star Rating -->

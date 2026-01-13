@@ -1,0 +1,8 @@
+vendor/
+.git/
+.github/
+.dockerignore
+Dockerfile
+docker-compose.yml
+public/uploads/covers/*
+!public/uploads/covers/.gitkeep

@@ -1,22 +1,21 @@
 <?php
 namespace App;
+use PDO;
+use App\Book;
+use App\EBook;
 class Library
 {
-    private \PDO $pdo;  // ← Add backslash here
+    private PDO $pdo;  // ← Add backslash here
     private array $books = [];
 
     public function __construct() {
         $config = include __DIR__ . '/../config/database.php';
 
         $dsn = "mysql:host={$config['host']};dbname={$config['dbname']};charset={$config['charset']}";
-        $options = [
-            \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-            \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-            \PDO::ATTR_EMULATE_PREPARES   => false,
-        ];
+        $options = $config['options'];
 
         try {
-            $this->pdo = new \PDO($dsn, $config['username'], $config['password'], $options);
+            $this->pdo = new PDO($dsn, $config['username'], $config['password'], $options);
         } catch (\PDOException $e) {
             die("Database connection failed: " . $e->getMessage());
         }
@@ -33,7 +32,11 @@ class Library
     {
         $stmt = $this->pdo->query("SELECT * FROM books ORDER BY title");
         while ($row = $stmt->fetch()) {
-            $book = Book::fromArray($row);
+            if (isset($row['type']) && $row['type'] === 'ebook') {
+                $book = EBook::fromArray($row);
+            } else {
+                $book = Book::fromArray($row);
+            }
             $this->books[$book->getId()] = $book;
         }
     }
@@ -50,6 +53,7 @@ class Library
         return $this->books[$id] ?? null;
     }
 
+    // Dependency Injection(DI)
     public function handleCoverUpload(Book $book, array $files): bool
     {
         if (isset($files['cover_image']) && $files['cover_image']['error'] === UPLOAD_ERR_OK) {
@@ -61,7 +65,6 @@ class Library
                     $oldPath = __DIR__ . '/../public/uploads/covers/' . $book->getCoverImage();
                     if (file_exists($oldPath)) unlink($oldPath);
                 }
-
                 $coverFilename = $book->getId() . '.' . $ext;
                 $uploadPath = __DIR__ . '/../public/uploads/covers/' . $coverFilename;
                 
@@ -77,9 +80,9 @@ class Library
     public function addBook(Book $book): void
     {
         $sql = "INSERT INTO books (
-            id, title, author, year, cover_image, category, total_copies, available_copies
+            id, title, author, year, cover_image, category, total_copies, available_copies, type, file_size, download_link
         ) VALUES (
-            :id, :title, :author, :year, :cover_image, :category, :total_copies, :available_copies
+            :id, :title, :author, :year, :cover_image, :category, :total_copies, :available_copies, :type, :file_size, :download_link
         )";
 
         $stmt = $this->pdo->prepare($sql);
@@ -93,6 +96,9 @@ class Library
             ':category'         => $data['category'],
             ':total_copies'     => $data['total_copies'],
             ':available_copies' => $data['available_copies'],
+            ':type'             => $data['type'] ?? 'physical',
+            ':file_size'        => $data['file_size'] ?? null,
+            ':download_link'    => $data['download_link'] ?? null,
         ]);
 
         $this->books[$book->getId()] = $book;
@@ -108,9 +114,24 @@ class Library
             cover_image = :cover_image,
             category = :category,
             total_copies = :total_copies,
-            available_copies = :available_copies
+            available_copies = :available_copies,
+            type = :type,
+            file_size = :file_size,
+            download_link = :download_link
             WHERE id = :id");
-        $stmt->execute($data);
+        $stmt->execute([
+            ':id'               => $data['id'],
+            ':title'            => $data['title'],
+            ':author'           => $data['author'],
+            ':year'             => $data['year'],
+            ':cover_image'      => $data['cover_image'],
+            ':category'         => $data['category'],
+            ':total_copies'     => $data['total_copies'],
+            ':available_copies' => $data['available_copies'],
+            ':type'             => $data['type'] ?? 'physical',
+            ':file_size'        => $data['file_size'] ?? null,
+            ':download_link'    => $data['download_link'] ?? null,
+        ]);
         $this->books[$book->getId()] = $book;
     }
 
@@ -125,16 +146,19 @@ class Library
     }
 
     // ==================== Borrowing & Due Dates ====================
-
+    // ============ business logic ================
     public function borrowBook(string $bookId, int $userId): bool
     {
         $book = $this->getBookById($bookId);
         if (!$book || !$book->borrowCopy()) return false;
-
+    
         $dueDate = date('Y-m-d', strtotime('+14 days')); // 14-day loan
-        $stmt = $this->pdo->prepare("INSERT INTO borrowing_history 
-            (user_id, book_id, due_date) VALUES (?, ?, ?)");
-        $stmt->execute([$userId, $bookId, $dueDate]);
+        $stmt = $this->pdo->prepare("INSERT INTO borrowing_history (user_id, book_id, due_date) 
+        VALUES (:user_id, :book_id, :due_date)");
+        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindParam(':book_id', $bookId, PDO::PARAM_STR);
+        $stmt->bindParam(':due_date', $dueDate, PDO::PARAM_STR);
+        $stmt->execute();
 
         $this->updateBook($book);
         $this->sendNotification($_SESSION['email'], $book->getTitle(), 'borrowed', $dueDate);

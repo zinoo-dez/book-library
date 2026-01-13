@@ -10,6 +10,7 @@ require_once '../includes/functions.php';
 use App\Auth;
 use App\Library;
 use App\Book;
+use App\EBook;
 
 Auth::guardAdmin();  // Only admins can access
 
@@ -27,11 +28,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $year        = (int)($_POST['year'] ?? 0);
     $category    = $_POST['category'] ?? 'Uncategorized';
     $totalCopies = max(1, (int)($_POST['total_copies'] ?? 1));
+    $type        = $_POST['type'] ?? 'physical';
+    $fileSize    = trim($_POST['file_size'] ?? '');
+    $downloadLink = trim($_POST['download_link'] ?? '');
 
     if (empty($title)) $errors[] = "Title is required.";
     if (empty($author)) $errors[] = "Author is required.";
     if ($year < 1000 || $year > date('Y') + 5) $errors[] = "Invalid year.";
     if (!in_array($category, getCategories())) $errors[] = "Invalid category.";
+    if ($type === 'ebook' && empty($downloadLink)) $errors[] = "Download link is required for e-books.";
 
     if (empty($errors)) {
         if ($id && $library->getBookById($id)) {
@@ -39,11 +44,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $book = $library->getBookById($id);
             $book->setCategory($category);
             $book->setTotalCopies($totalCopies);
-            // Title, author, year usually not changed, but you can allow
+            if ($book instanceof EBook) {
+                $book->setFileSize($fileSize);
+                $book->setDownloadLink($downloadLink);
+            }
             $isEdit = true;
         } else {
             // New book
-            $book = new Book($title, $author, $year, $totalCopies, null, $category);
+            if ($type === 'ebook') {
+                $book = new EBook($title, $author, $year, $fileSize, $totalCopies, null, $category, $downloadLink);
+            } else {
+                $book = new Book($title, $author, $year, $totalCopies, null, $category);
+            }
         }
 
         // Handle cover upload
@@ -139,6 +151,39 @@ include '../views/header.php';
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">Book Type</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="type" id="typePhysical" value="physical"
+                               <?= (!$book || $book->getType() === 'physical') ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="typePhysical">Physical Book</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="type" id="typeEbook" value="ebook"
+                               <?= ($book && $book->getType() === 'ebook') ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="typeEbook">E-Book</label>
+                    </div>
+                </div>
+
+                <div id="ebookFields" style="<?= ($book && $book->getType() === 'ebook') ? '' : 'display: none;' ?>">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">File Size (e.g., 2.5 MB)</label>
+                                <input type="text" name="file_size" class="form-control"
+                                       value="<?= ($book instanceof EBook) ? e($book->getFileSize()) : '' ?>">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Download Link (URL)</label>
+                                <input type="url" name="download_link" class="form-control"
+                                       value="<?= ($book instanceof EBook) ? e($book->getDownloadLink()) : '' ?>">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label">Cover Image (JPG, PNG, GIF - max 2MB)</label>
                     <input type="file" name="cover_image" class="form-control" accept="image/*">
 
@@ -161,5 +206,27 @@ include '../views/header.php';
         </div>
     </div>
 </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typePhysical = document.getElementById('typePhysical');
+    const typeEbook = document.getElementById('typeEbook');
+    const ebookFields = document.getElementById('ebookFields');
+
+    function toggleEbookFields() {
+        if (typeEbook.checked) {
+            ebookFields.style.display = 'block';
+        } else {
+            ebookFields.style.display = 'none';
+        }
+    }
+
+    if (typePhysical && typeEbook) {
+        typePhysical.addEventListener('change', toggleEbookFields);
+        typeEbook.addEventListener('change', toggleEbookFields);
+    }
+});
+</script>
 
 <?php include '../views/footer.php'; ?>
